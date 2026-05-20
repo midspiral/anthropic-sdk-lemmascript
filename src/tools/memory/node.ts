@@ -22,6 +22,20 @@ const FILE_CREATE_MODE = 0o600;
 // world-accessible in environments with permissive umasks.
 const DIR_CREATE_MODE = 0o700;
 
+// CVE-2026-34451: prior to the fix, containment was checked with
+// `p.startsWith(root)` — a missing path separator let a sibling directory
+// like "/sandbox/memory-evil" pass for root "/sandbox/memory". The fix
+// requires either equality with the root or a startsWith that includes the
+// separator. This pure predicate is verified with LemmaScript (Dafny
+// backend): the postcondition rejects the buggy form by quantifying over
+// the boundary character.
+function isInsideRoot(resolvedRoot: string, resolvedPath: string, sep: string): boolean {
+  //@ verify
+  //@ requires sep.length === 1
+  //@ ensures \result === true ==> resolvedPath === resolvedRoot || (resolvedPath.length > resolvedRoot.length && resolvedPath.slice(0, resolvedRoot.length) === resolvedRoot && resolvedPath.slice(resolvedRoot.length, resolvedRoot.length + 1) === sep)
+  return resolvedPath === resolvedRoot || resolvedPath.startsWith(resolvedRoot + sep);
+}
+
 async function exists(path: string) {
   return await fs
     .access(path)
@@ -81,7 +95,7 @@ async function validateNoSymlinkEscape(targetPath: string, memoryRoot: string): 
   while (true) {
     try {
       const resolved = await fs.realpath(current);
-      if (resolved !== resolvedRoot && !resolved.startsWith(resolvedRoot + path.sep)) {
+      if (!isInsideRoot(resolvedRoot, resolved, path.sep)) {
         throw new Error(`Path would escape /memories directory via symlink`);
       }
       return;
@@ -149,7 +163,7 @@ export class BetaLocalFilesystemMemoryTool implements MemoryToolHandlers {
 
     const resolvedPath = path.resolve(fullPath);
     const resolvedRoot = path.resolve(this.memoryRoot);
-    if (resolvedPath !== resolvedRoot && !resolvedPath.startsWith(resolvedRoot + path.sep)) {
+    if (!isInsideRoot(resolvedRoot, resolvedPath, path.sep)) {
       throw new Error(`Path ${memoryPath} would escape /memories directory`);
     }
 
