@@ -4,15 +4,15 @@ Fork of [anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anth
 
 ## CVE-2026-34451 — Memory Tool Path Validation Allows Sandbox Escape
 
-The local-filesystem memory tool validated model-supplied paths with a string prefix check that did not append a trailing path separator. A model steered by prompt injection could supply a crafted path that resolved to a *sibling* directory sharing the memory root's name as a prefix — e.g. with `memoryRoot = /sandbox/memory`, the path `/sandbox/memory-evil/secrets` passed `resolvedPath.startsWith(resolvedRoot)` — allowing reads and writes outside the sandboxed memory directory.
+The local-filesystem memory tool validated model-supplied paths with a string prefix check that did not append a trailing path separator. A model steered by prompt injection could supply a crafted path that resolved to a _sibling_ directory sharing the memory root's name as a prefix — e.g. with `memoryRoot = /sandbox/memory`, the path `/sandbox/memory-evil/secrets` passed `resolvedPath.startsWith(resolvedRoot)` — allowing reads and writes outside the sandboxed memory directory.
 
-| | |
-|---|---|
-| Advisory | [GHSA / CVE-2026-34451](https://advisories.gitlab.com/pkg/npm/@anthropic-ai/sdk/CVE-2026-34451/) |
-| CWE | CWE-22 (Path Traversal), CWE-41 (Path Equivalence) |
-| Affected | `@anthropic-ai/sdk` 0.79.0 – 0.80.x |
-| Fix | [`0ac69b3`](https://github.com/anthropics/anthropic-sdk-typescript/commit/0ac69b3438ee9c96b21a7d3c39c07b7cdb6995d9) "memory: append path separator in validatePath prefix check", in 0.81.0 (Mar 31 2026) |
-| Sibling CVE | [CVE-2026-34452](https://advisories.gitlab.com/pkg/pypi/anthropic/CVE-2026-34452/) — same feature in the Python SDK, different bug (race condition) |
+|             |                                                                                                                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Advisory    | [GHSA / CVE-2026-34451](https://advisories.gitlab.com/pkg/npm/@anthropic-ai/sdk/CVE-2026-34451/)                                                                                                          |
+| CWE         | CWE-22 (Path Traversal), CWE-41 (Path Equivalence)                                                                                                                                                        |
+| Affected    | `@anthropic-ai/sdk` 0.79.0 – 0.80.x                                                                                                                                                                       |
+| Fix         | [`0ac69b3`](https://github.com/anthropics/anthropic-sdk-typescript/commit/0ac69b3438ee9c96b21a7d3c39c07b7cdb6995d9) "memory: append path separator in validatePath prefix check", in 0.81.0 (Mar 31 2026) |
+| Sibling CVE | [CVE-2026-34452](https://advisories.gitlab.com/pkg/pypi/anthropic/CVE-2026-34452/) — same feature in the Python SDK, different bug (race condition)                                                       |
 
 The fix replaces
 
@@ -44,7 +44,7 @@ function isInsideRoot(resolvedRoot: string, resolvedPath: string, sep: string): 
 }
 ```
 
-The postcondition is the **strict-containment** property the CVE was about: if `isInsideRoot` returns `true`, then the path is either the root itself, or extends it by a separator-prefixed suffix. The boundary character at position `resolvedRoot.length` *must* be `sep` — the property that the buggy `startsWith(root)` form silently dropped.
+The postcondition is the **strict-containment** property the CVE was about: if `isInsideRoot` returns `true`, then the path is either the root itself, or extends it by a separator-prefixed suffix. The boundary character at position `resolvedRoot.length` _must_ be `sep` — the property that the buggy `startsWith(root)` form silently dropped.
 
 `validatePath` and `validateNoSymlinkEscape` now call `isInsideRoot(resolvedRoot, resolvedPath, path.sep)` rather than open-coding the check. The async wrappers (`fs.realpath`, `path.resolve`, etc.) remain unverified — only the pure containment helper is in the verification surface.
 
@@ -81,12 +81,12 @@ The counterexample shape is exactly the attack: `resolvedRoot = "abc"`, `resolve
 This is a deliberately narrow case study. The unverified surface includes:
 
 - **All async / IO**: `fs.realpath`, `fs.access`, `path.resolve`, `path.join`, `path.dirname` — Node stdlib calls. The verification target is the pure boundary predicate that the async wrappers delegate to.
-- **The symlink walker** in `validateNoSymlinkEscape`: the loop structure that walks up to the deepest existing ancestor is unverified. We only verify that *each* containment check inside that loop uses the strict predicate.
+- **The symlink walker** in `validateNoSymlinkEscape`: the loop structure that walks up to the deepest existing ancestor is unverified. We only verify that _each_ containment check inside that loop uses the strict predicate.
 - **`path.sep` itself**: passed as a `string` parameter with `|sep| == 1`. The Dafny model has no notion of OS-specific path separators; the requires-clause is the contract.
 - **`path.resolve` correctness**: we assume `path.resolve` returns canonical absolute paths. If `path.resolve` itself were buggy (e.g., didn't normalize `..`), the predicate alone wouldn't save you. The sibling CVE-2026-34452 in the Python SDK is a race condition exactly at this boundary.
 - **Everything else in `node.ts`**: command handlers, atomic-write helper, traversal — selective verification per LemmaScript SPEC §2.6. Only `//@ verify`-annotated functions are checked.
 
-The verified predicate is necessary but not sufficient; it pins the *load-bearing string-prefix asymmetry* that constituted the CVE.
+The verified predicate is necessary but not sufficient; it pins the _load-bearing string-prefix asymmetry_ that constituted the CVE.
 
 ## Setup
 
@@ -107,9 +107,9 @@ Reads `LemmaScript-files.txt` (currently lists `src/tools/memory/node.ts`), rege
 
 ## Notes for the Talk
 
-- **Tests can't quantify over paths.** The fix shipped with two regression tests covering `sandbox/memory-evil` and `sandbox/memorysibling`. Neither would have caught a future variant on a different prefix collision. The `ensures` clause quantifies over *all* `(resolvedRoot, resolvedPath, sep)` triples.
+- **Tests can't quantify over paths.** The fix shipped with two regression tests covering `sandbox/memory-evil` and `sandbox/memorysibling`. Neither would have caught a future variant on a different prefix collision. The `ensures` clause quantifies over _all_ `(resolvedRoot, resolvedPath, sep)` triples.
 - **Sibling CVE underscores the cost of duplicated logic.** The same feature in the Python SDK (CVE-2026-34452) had a different bug at the same boundary. One verified predicate, two implementations needing it, three CVE-classes of failure modes — that's the case for stating the invariant once and reusing it across languages where possible.
-- **In-place vs. extracted.** Unlike rallly (extracted `scorePoll`) or jose (extracted typed core), this verification is **in-place**: the production code path in 0.81.0+ now flows through a function with a machine-checked postcondition. The verified file *is* the shipping file, modulo the unverified IO shell that calls it.
+- **In-place vs. extracted.** Unlike rallly (extracted `scorePoll`) or jose (extracted typed core), this verification is **in-place**: the production code path in 0.81.0+ now flows through a function with a machine-checked postcondition. The verified file _is_ the shipping file, modulo the unverified IO shell that calls it.
 
 ## What's Next
 
