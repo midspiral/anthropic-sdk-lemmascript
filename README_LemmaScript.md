@@ -76,9 +76,11 @@ Dafny program verifier finished with 2 verified, 1 error
 
 The counterexample shape is exactly the attack: `resolvedRoot = "abc"`, `resolvedPath = "abcd"`. `startsWith` returns `true`, `resolvedPath !== resolvedRoot`, and `resolvedPath.slice(3, 4) === "d"` is not equal to `sep`. The postcondition forces the disjunction to fail and the proof obligation cannot be discharged — same predicate, two answers across the fix.
 
-## What's NOT Verified
+The fix shipped with two regression tests covering `sandbox/memory-evil` and `sandbox/memorysibling`. Neither would have caught a future variant on a different prefix collision. The `ensures` clause quantifies over _all_ `(resolvedRoot, resolvedPath, sep)` triples.
 
-This is a deliberately narrow case study. The unverified surface includes:
+## Trust boundary
+
+This is a narrow case study. The unverified surface includes:
 
 - **All async / IO**: `fs.realpath`, `fs.access`, `path.resolve`, `path.join`, `path.dirname` — Node stdlib calls. The verification target is the pure boundary predicate that the async wrappers delegate to.
 - **The symlink walker** in `validateNoSymlinkEscape`: the loop structure that walks up to the deepest existing ancestor is unverified. We only verify that _each_ containment check inside that loop uses the strict predicate.
@@ -105,14 +107,7 @@ cd ../LemmaScript/tools && npm install && cd -
 
 Reads `LemmaScript-files.txt` (currently lists `src/tools/memory/node.ts`), regenerates `src/tools/memory/node.dfy.gen`, and runs `dafny verify`. Functions without `//@ verify` are silently skipped.
 
-## Notes for the Talk
-
-- **Tests can't quantify over paths.** The fix shipped with two regression tests covering `sandbox/memory-evil` and `sandbox/memorysibling`. Neither would have caught a future variant on a different prefix collision. The `ensures` clause quantifies over _all_ `(resolvedRoot, resolvedPath, sep)` triples.
-- **Sibling CVE underscores the cost of duplicated logic.** The same feature in the Python SDK (CVE-2026-34452) had a different bug at the same boundary. One verified predicate, two implementations needing it, three CVE-classes of failure modes — that's the case for stating the invariant once and reusing it across languages where possible.
-- **In-place vs. extracted.** Unlike rallly (extracted `scorePoll`) or jose (extracted typed core), this verification is **in-place**: the production code path in 0.81.0+ now flows through a function with a machine-checked postcondition. The verified file _is_ the shipping file, modulo the unverified IO shell that calls it.
-
 ## What's Next
 
 - **Verify `path.resolve` semantics abstractly.** Model `path.resolve` as a function from string to string with the postcondition "result is absolute and free of `..`/`.` segments." Then prove that `isInsideRoot(resolve(root), resolve(p), sep) ==> resolve(p) does not have `..` outside root`. This brings the IO boundary inside the proof.
-- **Verify the symlink walker.** `validateNoSymlinkEscape` walks up the path tree resolving each existing ancestor with `fs.realpath`. The loop invariant "every fully-resolved ancestor seen so far is inside root" is provable; the open question is modeling `realpath`'s non-determinism (could be raced).
 - **Cross-port to the Python SDK case study.** CVE-2026-34452 is a TOCTOU race in the same predicate; the property to prove there is concurrent safety, not just spatial containment.
