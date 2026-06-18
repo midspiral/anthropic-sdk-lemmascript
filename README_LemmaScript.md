@@ -2,7 +2,6 @@
 
 [![LemmaScript verified](https://img.shields.io/github/actions/workflow/status/midspiral/anthropic-sdk-lemmascript/lemmascript.yml?branch=lemmascript&label=LemmaScript%20verified)](https://github.com/midspiral/anthropic-sdk-lemmascript/actions/workflows/lemmascript.yml)
 
-
 Fork of [anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anthropic-sdk-typescript) with the path-containment predicate behind [CVE-2026-34451](https://advisories.gitlab.com/pkg/npm/@anthropic-ai/sdk/CVE-2026-34451/) verified **in-place** in `src/tools/memory/node.ts` using [LemmaScript](https://github.com/midspiral/LemmaScript) (Dafny backend). 1 verified function with 1 `ensures`, 0 errors. The same `ensures` rejects the pre-fix body that shipped in versions 0.79.0–0.80.x.
 
 ## CVE-2026-34451 — Memory Tool Path Validation Allows Sandbox Escape
