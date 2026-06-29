@@ -59,11 +59,12 @@ export type BetaWebhookEventData =
   | BetaWebhookVaultCredentialCreatedEventData
   | BetaWebhookVaultCredentialArchivedEventData
   | BetaWebhookVaultCredentialDeletedEventData
-  | BetaWebhookVaultCredentialRefreshFailedEventData;
+  | BetaWebhookVaultCredentialRefreshFailedEventData
+  | BetaWebhookSessionUpdatedEventData;
 
 export interface BetaWebhookSessionArchivedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -76,7 +77,7 @@ export interface BetaWebhookSessionArchivedEventData {
 
 export interface BetaWebhookSessionCreatedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -89,7 +90,7 @@ export interface BetaWebhookSessionCreatedEventData {
 
 export interface BetaWebhookSessionDeletedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -102,7 +103,7 @@ export interface BetaWebhookSessionDeletedEventData {
 
 export interface BetaWebhookSessionIdledEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -115,7 +116,7 @@ export interface BetaWebhookSessionIdledEventData {
 
 export interface BetaWebhookSessionOutcomeEvaluationEndedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -128,7 +129,7 @@ export interface BetaWebhookSessionOutcomeEvaluationEndedEventData {
 
 export interface BetaWebhookSessionPendingEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -141,7 +142,7 @@ export interface BetaWebhookSessionPendingEventData {
 
 export interface BetaWebhookSessionRequiresActionEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -154,7 +155,7 @@ export interface BetaWebhookSessionRequiresActionEventData {
 
 export interface BetaWebhookSessionRunningEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -167,7 +168,7 @@ export interface BetaWebhookSessionRunningEventData {
 
 export interface BetaWebhookSessionStatusIdledEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -180,7 +181,7 @@ export interface BetaWebhookSessionStatusIdledEventData {
 
 export interface BetaWebhookSessionStatusRescheduledEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -193,7 +194,7 @@ export interface BetaWebhookSessionStatusRescheduledEventData {
 
 export interface BetaWebhookSessionStatusRunStartedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -206,7 +207,7 @@ export interface BetaWebhookSessionStatusRunStartedEventData {
 
 export interface BetaWebhookSessionStatusTerminatedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
@@ -219,11 +220,16 @@ export interface BetaWebhookSessionStatusTerminatedEventData {
 
 export interface BetaWebhookSessionThreadCreatedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
   organization_id: string;
+
+  /**
+   * ID of the session thread this event refers to.
+   */
+  session_thread_id: string;
 
   type: 'session.thread_created';
 
@@ -232,11 +238,16 @@ export interface BetaWebhookSessionThreadCreatedEventData {
 
 export interface BetaWebhookSessionThreadIdledEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
   organization_id: string;
+
+  /**
+   * ID of the session thread this event refers to.
+   */
+  session_thread_id: string;
 
   type: 'session.thread_idled';
 
@@ -245,20 +256,38 @@ export interface BetaWebhookSessionThreadIdledEventData {
 
 export interface BetaWebhookSessionThreadTerminatedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the session that triggered the event.
    */
   id: string;
 
   organization_id: string;
+
+  /**
+   * ID of the session thread this event refers to.
+   */
+  session_thread_id: string;
 
   type: 'session.thread_terminated';
 
   workspace_id: string;
 }
 
+export interface BetaWebhookSessionUpdatedEventData {
+  /**
+   * ID of the session that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'session.updated';
+
+  workspace_id: string;
+}
+
 export interface BetaWebhookVaultArchivedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the vault that triggered the event.
    */
   id: string;
 
@@ -271,7 +300,7 @@ export interface BetaWebhookVaultArchivedEventData {
 
 export interface BetaWebhookVaultCreatedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the vault that triggered the event.
    */
   id: string;
 
@@ -284,7 +313,7 @@ export interface BetaWebhookVaultCreatedEventData {
 
 export interface BetaWebhookVaultCredentialArchivedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the vault credential that triggered the event.
    */
   id: string;
 
@@ -302,7 +331,7 @@ export interface BetaWebhookVaultCredentialArchivedEventData {
 
 export interface BetaWebhookVaultCredentialCreatedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the vault credential that triggered the event.
    */
   id: string;
 
@@ -320,7 +349,7 @@ export interface BetaWebhookVaultCredentialCreatedEventData {
 
 export interface BetaWebhookVaultCredentialDeletedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the vault credential that triggered the event.
    */
   id: string;
 
@@ -338,7 +367,7 @@ export interface BetaWebhookVaultCredentialDeletedEventData {
 
 export interface BetaWebhookVaultCredentialRefreshFailedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the vault credential that triggered the event.
    */
   id: string;
 
@@ -356,7 +385,7 @@ export interface BetaWebhookVaultCredentialRefreshFailedEventData {
 
 export interface BetaWebhookVaultDeletedEventData {
   /**
-   * ID of the resource that triggered the event.
+   * ID of the vault that triggered the event.
    */
   id: string;
 
@@ -405,6 +434,7 @@ export declare namespace Webhooks {
     type BetaWebhookSessionThreadCreatedEventData as BetaWebhookSessionThreadCreatedEventData,
     type BetaWebhookSessionThreadIdledEventData as BetaWebhookSessionThreadIdledEventData,
     type BetaWebhookSessionThreadTerminatedEventData as BetaWebhookSessionThreadTerminatedEventData,
+    type BetaWebhookSessionUpdatedEventData as BetaWebhookSessionUpdatedEventData,
     type BetaWebhookVaultArchivedEventData as BetaWebhookVaultArchivedEventData,
     type BetaWebhookVaultCreatedEventData as BetaWebhookVaultCreatedEventData,
     type BetaWebhookVaultCredentialArchivedEventData as BetaWebhookVaultCredentialArchivedEventData,

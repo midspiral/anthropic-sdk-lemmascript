@@ -5,7 +5,7 @@ import { APIResource } from '../../core/resource';
 import { Stream } from '../../core/streaming';
 import { buildHeaders } from '../../internal/headers';
 import { RequestOptions } from '../../internal/request-options';
-import { stainlessHelperHeader } from '../../lib/stainless-helper-header';
+import { stainlessHelperHeader } from '../../internal/stainless-helper-header';
 import { MessageStream } from '../../lib/MessageStream';
 import {
   parseMessage,
@@ -55,19 +55,20 @@ export class Messages extends APIResource {
    * });
    * ```
    */
-  create(body: MessageCreateParamsNonStreaming, options?: RequestOptions): APIPromise<Message>;
+  create(params: MessageCreateParamsNonStreaming, options?: RequestOptions): APIPromise<Message>;
   create(
-    body: MessageCreateParamsStreaming,
+    params: MessageCreateParamsStreaming,
     options?: RequestOptions,
   ): APIPromise<Stream<RawMessageStreamEvent>>;
   create(
-    body: MessageCreateParamsBase,
+    params: MessageCreateParamsBase,
     options?: RequestOptions,
   ): APIPromise<Stream<RawMessageStreamEvent> | Message>;
   create(
-    body: MessageCreateParams,
+    params: MessageCreateParams,
     options?: RequestOptions,
   ): APIPromise<Message> | APIPromise<Stream<RawMessageStreamEvent>> {
+    const { user_profile_id, ...body } = params;
     if (body.model in DEPRECATED_MODELS) {
       console.warn(
         `The model '${body.model}' is deprecated and will reach end-of-life on ${
@@ -93,13 +94,16 @@ export class Messages extends APIResource {
 
     // Collect helper info from tools and messages
     const helperHeader = stainlessHelperHeader(body.tools, body.messages);
-
     return this._client.post('/v1/messages', {
       body,
       timeout: timeout ?? 600000,
       ...options,
-      headers: buildHeaders([helperHeader, options?.headers]),
-      stream: body.stream ?? false,
+      headers: buildHeaders([
+        { ...(user_profile_id != null ? { 'anthropic-user-profile-id': user_profile_id } : undefined) },
+        helperHeader,
+        options?.headers,
+      ]),
+      stream: params.stream ?? false,
     }) as APIPromise<Message> | APIPromise<Stream<RawMessageStreamEvent>>;
   }
 
@@ -289,7 +293,9 @@ export interface CacheControlEphemeral {
    * - `5m`: 5 minutes
    * - `1h`: 1 hour
    *
-   * Defaults to `5m`.
+   * Defaults to `5m`. See
+   * [prompt caching pricing](https://docs.claude.com/en/docs/build-with-claude/prompt-caching)
+   * for details.
    */
   ttl?: '5m' | '1h';
 }
@@ -605,7 +611,9 @@ export interface CodeExecutionTool20250522 {
 
   type: 'code_execution_20250522';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -634,7 +642,9 @@ export interface CodeExecutionTool20250825 {
 
   type: 'code_execution_20250825';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -667,7 +677,43 @@ export interface CodeExecutionTool20260120 {
 
   type: 'code_execution_20260120';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
+
+  /**
+   * Create a cache control breakpoint at this content block.
+   */
+  cache_control?: CacheControlEphemeral | null;
+
+  /**
+   * If true, tool will not be included in initial system prompt. Only loaded when
+   * returned via tool_reference from tool search.
+   */
+  defer_loading?: boolean;
+
+  /**
+   * When true, guarantees schema validation on tool names and inputs
+   */
+  strict?: boolean;
+}
+
+/**
+ * Code execution tool with REPL state persistence.
+ */
+export interface CodeExecutionTool20260521 {
+  /**
+   * Name of the tool.
+   *
+   * This is how the tool will be called by the model and in `tool_use` blocks.
+   */
+  name: 'code_execution';
+
+  type: 'code_execution_20260521';
+
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -823,7 +869,8 @@ export type ContentBlockParam =
   | BashCodeExecutionToolResultBlockParam
   | TextEditorCodeExecutionToolResultBlockParam
   | ToolSearchToolResultBlockParam
-  | ContainerUploadBlockParam;
+  | ContainerUploadBlockParam
+  | MidConversationSystemBlockParam;
 
 export interface ContentBlockSource {
   content: string | Array<ContentBlockSourceContent>;
@@ -939,7 +986,9 @@ export interface MemoryTool20250818 {
 
   type: 'memory_20250818';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -1011,8 +1060,9 @@ export interface Message {
   content: Array<ContentBlock>;
 
   /**
-   * The model that will complete your prompt.\n\nSee
-   * [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+   * The model that will complete your prompt.
+   *
+   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
    * details and options.
    */
   model: Model;
@@ -1093,6 +1143,7 @@ export type MessageCountTokensTool =
   | CodeExecutionTool20250522
   | CodeExecutionTool20250825
   | CodeExecutionTool20260120
+  | CodeExecutionTool20260521
   | MemoryTool20250818
   | ToolTextEditor20250124
   | ToolTextEditor20250429
@@ -1127,6 +1178,16 @@ export interface MessageDeltaUsage {
   output_tokens: number;
 
   /**
+   * Breakdown of output tokens by category.
+   *
+   * `output_tokens` remains the inclusive, authoritative total used for billing.
+   * This object provides a read-only decomposition for observability — for example,
+   * how many of the billed output tokens were spent on internal reasoning that may
+   * have been summarized before being returned to you.
+   */
+  output_tokens_details: OutputTokensDetails | null;
+
+  /**
    * The number of server tool requests.
    */
   server_tool_use: ServerToolUsage | null;
@@ -1135,7 +1196,7 @@ export interface MessageDeltaUsage {
 export interface MessageParam {
   content: string | Array<ContentBlockParam>;
 
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
 }
 
 export interface MessageTokensCount {
@@ -1158,11 +1219,36 @@ export interface Metadata {
 }
 
 /**
- * The model that will complete your prompt.\n\nSee
- * [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+ * System instructions that appear mid-conversation.
+ *
+ * Use this block to provide or update system-level instructions at a specific
+ * point in the conversation, rather than only via the top-level `system`
+ * parameter.
+ */
+export interface MidConversationSystemBlockParam {
+  /**
+   * System instruction text blocks.
+   */
+  content: Array<TextBlockParam>;
+
+  type: 'mid_conv_system';
+
+  /**
+   * Create a cache control breakpoint at this content block.
+   */
+  cache_control?: CacheControlEphemeral | null;
+}
+
+/**
+ * The model that will complete your prompt.
+ *
+ * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
  * details and options.
  */
 export type Model =
+  | 'claude-fable-5'
+  | 'claude-mythos-5'
+  | 'claude-opus-4-8'
   | 'claude-opus-4-7'
   | 'claude-mythos-preview'
   | 'claude-opus-4-6'
@@ -1175,11 +1261,6 @@ export type Model =
   | 'claude-sonnet-4-5-20250929'
   | 'claude-opus-4-1'
   | 'claude-opus-4-1-20250805'
-  | 'claude-opus-4-0'
-  | 'claude-opus-4-20250514'
-  | 'claude-sonnet-4-0'
-  | 'claude-sonnet-4-20250514'
-  | 'claude-3-haiku-20240307'
   | (string & {});
 
 export interface OutputConfig {
@@ -1195,6 +1276,19 @@ export interface OutputConfig {
   format?: JSONOutputFormat | null;
 }
 
+export interface OutputTokensDetails {
+  /**
+   * Number of output tokens the model generated as internal reasoning, including the
+   * thinking-block delimiter tokens.
+   *
+   * Reflects the raw reasoning the model produced, not the (possibly shorter)
+   * summarized thinking text returned in the response body. Computed by
+   * re-tokenizing the raw reasoning text, so it may differ from the model's exact
+   * generation count by a small number of tokens. Always ≤ `output_tokens`;
+   * `output_tokens - thinking_tokens` approximates the non-reasoning output.
+   */
+  thinking_tokens: number;
+}
 const DEPRECATED_MODELS: {
   [K in Model]?: string;
 } = {
@@ -1215,6 +1309,9 @@ const DEPRECATED_MODELS: {
   'claude-opus-4-20250514': 'June 15th, 2026',
   'claude-sonnet-4-0': 'June 15th, 2026',
   'claude-sonnet-4-20250514': 'June 15th, 2026',
+  'claude-opus-4-1': 'August 5th, 2026',
+  'claude-opus-4-1-20250805': 'August 5th, 2026',
+  'claude-mythos-preview': 'June 30th, 2026',
 };
 
 const MODELS_TO_WARN_WITH_THINKING_ENABLED: Model[] = ['claude-mythos-preview', 'claude-opus-4-6'];
@@ -1350,11 +1447,9 @@ export interface RedactedThinkingBlockParam {
  */
 export interface RefusalStopDetails {
   /**
-   * The policy category that triggered the refusal.
-   *
-   * `null` when the refusal doesn't map to a named category.
+   * The policy category that triggered a refusal.
    */
-  category: 'cyber' | 'bio' | null;
+  category: 'cyber' | 'bio' | 'frontier_llm' | 'reasoning_extraction' | 'military_weapons' | null;
 
   /**
    * Human-readable explanation of the refusal.
@@ -1728,7 +1823,9 @@ export interface Tool {
    */
   name: string;
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -1798,7 +1895,9 @@ export interface ToolBash20250124 {
 
   type: 'bash_20250124';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -1935,7 +2034,9 @@ export interface ToolSearchToolBm25_20251119 {
 
   type: 'tool_search_tool_bm25_20251119' | 'tool_search_tool_bm25';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -1964,7 +2065,9 @@ export interface ToolSearchToolRegex20251119 {
 
   type: 'tool_search_tool_regex_20251119' | 'tool_search_tool_regex';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -2022,6 +2125,8 @@ export interface ToolSearchToolResultErrorParam {
   error_code: ToolSearchToolResultErrorCode;
 
   type: 'tool_search_tool_result_error';
+
+  error_message?: string | null;
 }
 
 export interface ToolSearchToolSearchResultBlock {
@@ -2046,7 +2151,9 @@ export interface ToolTextEditor20250124 {
 
   type: 'text_editor_20250124';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -2077,7 +2184,9 @@ export interface ToolTextEditor20250429 {
 
   type: 'text_editor_20250429';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -2108,7 +2217,9 @@ export interface ToolTextEditor20250728 {
 
   type: 'text_editor_20250728';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * Create a cache control breakpoint at this content block.
@@ -2145,6 +2256,7 @@ export type ToolUnion =
   | CodeExecutionTool20250522
   | CodeExecutionTool20250825
   | CodeExecutionTool20260120
+  | CodeExecutionTool20260521
   | MemoryTool20250818
   | ToolTextEditor20250124
   | ToolTextEditor20250429
@@ -2236,6 +2348,16 @@ export interface Usage {
   output_tokens: number;
 
   /**
+   * Breakdown of output tokens by category.
+   *
+   * `output_tokens` remains the inclusive, authoritative total used for billing.
+   * This object provides a read-only decomposition for observability — for example,
+   * how many of the billed output tokens were spent on internal reasoning that may
+   * have been summarized before being returned to you.
+   */
+  output_tokens_details: OutputTokensDetails | null;
+
+  /**
    * The number of server tool requests.
    */
   server_tool_use: ServerToolUsage | null;
@@ -2314,7 +2436,9 @@ export interface WebFetchTool20250910 {
 
   type: 'web_fetch_20250910';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * List of domains to allow fetching from
@@ -2370,7 +2494,9 @@ export interface WebFetchTool20260209 {
 
   type: 'web_fetch_20260209';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * List of domains to allow fetching from
@@ -2429,7 +2555,9 @@ export interface WebFetchTool20260309 {
 
   type: 'web_fetch_20260309';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * List of domains to allow fetching from
@@ -2529,6 +2657,7 @@ export type WebFetchToolResultErrorCode =
   | 'invalid_tool_input'
   | 'url_too_long'
   | 'url_not_allowed'
+  | 'url_not_in_prior_context'
   | 'url_not_accessible'
   | 'unsupported_content_type'
   | 'too_many_requests'
@@ -2569,7 +2698,9 @@ export interface WebSearchTool20250305 {
 
   type: 'web_search_20250305';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * If provided, only these domains will be included in results. Cannot be used
@@ -2630,7 +2761,9 @@ export interface WebSearchTool20260209 {
 
   type: 'web_search_20260209';
 
-  allowed_callers?: Array<'direct' | 'code_execution_20250825' | 'code_execution_20260120'>;
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
 
   /**
    * If provided, only these domains will be included in results. Cannot be used
@@ -2756,7 +2889,7 @@ export type MessageCreateParams = MessageCreateParamsNonStreaming | MessageCreat
 
 export interface MessageCreateParamsBase {
   /**
-   * The maximum number of tokens to generate before stopping.
+   * Body param: The maximum number of tokens to generate before stopping.
    *
    * Note that our models may stop _before_ reaching this maximum. This parameter
    * only specifies the absolute maximum number of tokens to generate.
@@ -2771,7 +2904,7 @@ export interface MessageCreateParamsBase {
   max_tokens: number;
 
   /**
-   * Input messages.
+   * Body param: Input messages.
    *
    * Our models are trained to operate on alternating `user` and `assistant`
    * conversational turns. When creating a new `Message`, you specify the prior
@@ -2840,42 +2973,44 @@ export interface MessageCreateParamsBase {
   messages: Array<MessageParam>;
 
   /**
-   * The model that will complete your prompt.\n\nSee
-   * [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+   * Body param: The model that will complete your prompt.
+   *
+   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
    * details and options.
    */
   model: Model;
 
   /**
-   * Top-level cache control automatically applies a cache_control marker to the last
-   * cacheable block in the request.
+   * Body param: Top-level cache control automatically applies a cache_control marker
+   * to the last cacheable block in the request.
    */
   cache_control?: CacheControlEphemeral | null;
 
   /**
-   * Container identifier for reuse across requests.
+   * Body param: Container identifier for reuse across requests.
    */
   container?: string | null;
 
   /**
-   * Specifies the geographic region for inference processing. If not specified, the
-   * workspace's `default_inference_geo` is used.
+   * Body param: Specifies the geographic region for inference processing. If not
+   * specified, the workspace's `default_inference_geo` is used.
    */
   inference_geo?: string | null;
 
   /**
-   * An object describing metadata about the request.
+   * Body param: An object describing metadata about the request.
    */
   metadata?: Metadata;
 
   /**
-   * Configuration options for the model's output, such as the output format.
+   * Body param: Configuration options for the model's output, such as the output
+   * format.
    */
   output_config?: OutputConfig;
 
   /**
-   * Determines whether to use priority capacity (if available) or standard capacity
-   * for this request.
+   * Body param: Determines whether to use priority capacity (if available) or
+   * standard capacity for this request.
    *
    * Anthropic offers different levels of service for your API requests. See
    * [service-tiers](https://docs.claude.com/en/api/service-tiers) for details.
@@ -2883,7 +3018,7 @@ export interface MessageCreateParamsBase {
   service_tier?: 'auto' | 'standard_only';
 
   /**
-   * Custom text sequences that will cause the model to stop generating.
+   * Body param: Custom text sequences that will cause the model to stop generating.
    *
    * Our models will normally stop when they have naturally completed their turn,
    * which will result in a response `stop_reason` of `"end_turn"`.
@@ -2896,14 +3031,15 @@ export interface MessageCreateParamsBase {
   stop_sequences?: Array<string>;
 
   /**
-   * Whether to incrementally stream the response using server-sent events.
+   * Body param: Whether to incrementally stream the response using server-sent
+   * events.
    *
    * See [streaming](https://docs.claude.com/en/api/messages-streaming) for details.
    */
   stream?: boolean;
 
   /**
-   * System prompt.
+   * Body param: System prompt.
    *
    * A system prompt is a way of providing context and instructions to Claude, such
    * as specifying a particular goal or role. See our
@@ -2919,7 +3055,7 @@ export interface MessageCreateParamsBase {
   temperature?: number;
 
   /**
-   * Configuration for enabling Claude's extended thinking.
+   * Body param: Configuration for enabling Claude's extended thinking.
    *
    * When enabled, responses include `thinking` content blocks showing Claude's
    * thinking process before the final answer. Requires a minimum budget of 1,024
@@ -2932,13 +3068,13 @@ export interface MessageCreateParamsBase {
   thinking?: ThinkingConfigParam;
 
   /**
-   * How the model should use the provided tools. The model can use a specific tool,
-   * any available tool, decide by itself, or not use tools at all.
+   * Body param: How the model should use the provided tools. The model can use a
+   * specific tool, any available tool, decide by itself, or not use tools at all.
    */
   tool_choice?: ToolChoice;
 
   /**
-   * Definitions of tools that the model may use.
+   * Body param: Definitions of tools that the model may use.
    *
    * If you include `tools` in your API request, the model may return `tool_use`
    * content blocks that represent the model's use of those tools. You can then run
@@ -3028,6 +3164,13 @@ export interface MessageCreateParamsBase {
    * other values will be rejected with a 400 error.
    */
   top_p?: number;
+
+  /**
+   * Header param: The user profile ID to attribute this request to. Use when acting
+   * on behalf of a party other than your organization. Requires the `user-profiles`
+   * beta header.
+   */
+  user_profile_id?: string;
 }
 
 export namespace MessageCreateParams {
@@ -3037,7 +3180,8 @@ export namespace MessageCreateParams {
 
 export interface MessageCreateParamsNonStreaming extends MessageCreateParamsBase {
   /**
-   * Whether to incrementally stream the response using server-sent events.
+   * Body param: Whether to incrementally stream the response using server-sent
+   * events.
    *
    * See [streaming](https://docs.claude.com/en/api/messages-streaming) for details.
    */
@@ -3046,7 +3190,8 @@ export interface MessageCreateParamsNonStreaming extends MessageCreateParamsBase
 
 export interface MessageCreateParamsStreaming extends MessageCreateParamsBase {
   /**
-   * Whether to incrementally stream the response using server-sent events.
+   * Body param: Whether to incrementally stream the response using server-sent
+   * events.
    *
    * See [streaming](https://docs.claude.com/en/api/messages-streaming) for details.
    */
@@ -3126,8 +3271,9 @@ export interface MessageCountTokensParams {
   messages: Array<MessageParam>;
 
   /**
-   * The model that will complete your prompt.\n\nSee
-   * [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+   * The model that will complete your prompt.
+   *
+   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
    * details and options.
    */
   model: Model;
@@ -3288,6 +3434,7 @@ export declare namespace Messages {
     type CodeExecutionTool20250522 as CodeExecutionTool20250522,
     type CodeExecutionTool20250825 as CodeExecutionTool20250825,
     type CodeExecutionTool20260120 as CodeExecutionTool20260120,
+    type CodeExecutionTool20260521 as CodeExecutionTool20260521,
     type CodeExecutionToolResultBlock as CodeExecutionToolResultBlock,
     type CodeExecutionToolResultBlockContent as CodeExecutionToolResultBlockContent,
     type CodeExecutionToolResultBlockParam as CodeExecutionToolResultBlockParam,
@@ -3320,8 +3467,10 @@ export declare namespace Messages {
     type MessageParam as MessageParam,
     type MessageTokensCount as MessageTokensCount,
     type Metadata as Metadata,
+    type MidConversationSystemBlockParam as MidConversationSystemBlockParam,
     type Model as Model,
     type OutputConfig as OutputConfig,
+    type OutputTokensDetails as OutputTokensDetails,
     type PlainTextSource as PlainTextSource,
     type RawContentBlockDelta as RawContentBlockDelta,
     type RawContentBlockDeltaEvent as RawContentBlockDeltaEvent,

@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.18.0 (2026-06-18)
+
+Full Changelog: [vertex-sdk-v0.17.1...vertex-sdk-v0.18.0](https://github.com/anthropics/anthropic-sdk-typescript/compare/vertex-sdk-v0.17.1...vertex-sdk-v0.18.0)
+
+### Features
+
+* **stream:** lazily parse partial tool json input ([#99](https://github.com/anthropics/anthropic-sdk-typescript/issues/99)) ([e55ceee](https://github.com/anthropics/anthropic-sdk-typescript/commit/e55ceee5e3053ada96a7fe008b1fd6ebc0e42544))
+
+
+### Chores
+
+* **tests:** stop using deprecated models ([#98](https://github.com/anthropics/anthropic-sdk-typescript/issues/98)) ([65ae1af](https://github.com/anthropics/anthropic-sdk-typescript/commit/65ae1afee1bb76179c58e1758a48d668e3fcf7b3))
+
+## 0.17.1 (2026-06-09)
+
+Full Changelog: [vertex-sdk-v0.17.0...vertex-sdk-v0.17.1](https://github.com/anthropics/anthropic-sdk-typescript/compare/vertex-sdk-v0.17.0...vertex-sdk-v0.17.1)
+
+### Bug Fixes
+
+* **client:** 3p middleware ordering ([#53](https://github.com/anthropics/anthropic-sdk-typescript/issues/53)) ([2a4c339](https://github.com/anthropics/anthropic-sdk-typescript/commit/2a4c339e6887aa2e8e1278c7b22d3732cf64a76c))
+
+## 0.17.0 (2026-06-05)
+
+Full Changelog: [vertex-sdk-v0.16.1...vertex-sdk-v0.17.0](https://github.com/anthropics/anthropic-sdk-typescript/compare/vertex-sdk-v0.16.1...vertex-sdk-v0.17.0)
+
+### Features
+
+* **api:** mark Claude Opus 4.1 as deprecated ([4ee46f2](https://github.com/anthropics/anthropic-sdk-typescript/commit/4ee46f24cb2a5388027d7efb0b44fcb210ae8b50))
+* **client:** add support for middleware ([9b01120](https://github.com/anthropics/anthropic-sdk-typescript/commit/9b011207965540211cefb19d44d758b7942aedab))
+
 ## 0.16.1 (2026-05-19)
 
 Full Changelog: [vertex-sdk-v0.16.0...vertex-sdk-v0.16.1](https://github.com/anthropics/anthropic-sdk-typescript/compare/vertex-sdk-v0.16.0...vertex-sdk-v0.16.1)

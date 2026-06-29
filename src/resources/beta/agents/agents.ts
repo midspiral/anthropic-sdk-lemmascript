@@ -519,20 +519,13 @@ export interface BetaManagedAgentsCustomTool {
  * JSON Schema for custom tool input parameters.
  */
 export interface BetaManagedAgentsCustomToolInputSchema {
-  /**
-   * JSON Schema properties defining the tool's input parameters.
-   */
+  type: 'object';
+
   properties?: { [key: string]: unknown } | null;
 
-  /**
-   * List of required property names.
-   */
-  required?: Array<string>;
+  required?: Array<string> | null;
 
-  /**
-   * Must be 'object' for tool input schemas.
-   */
-  type?: 'object';
+  [k: string]: unknown;
 }
 
 /**
@@ -671,11 +664,14 @@ export interface BetaManagedAgentsMCPToolsetParams {
 }
 
 /**
- * The model that will power your agent.\n\nSee
- * [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+ * The model that will power your agent.
+ *
+ * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
  * details and options.
  */
 export type BetaManagedAgentsModel =
+  | 'claude-fable-5'
+  | 'claude-opus-4-8'
   | 'claude-opus-4-7'
   | 'claude-opus-4-6'
   | 'claude-sonnet-4-6'
@@ -692,8 +688,9 @@ export type BetaManagedAgentsModel =
  */
 export interface BetaManagedAgentsModelConfig {
   /**
-   * The model that will power your agent.\n\nSee
-   * [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+   * The model that will power your agent.
+   *
+   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
    * details and options.
    */
   id: BetaManagedAgentsModel;
@@ -711,8 +708,9 @@ export interface BetaManagedAgentsModelConfig {
  */
 export interface BetaManagedAgentsModelConfigParams {
   /**
-   * The model that will power your agent.\n\nSee
-   * [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+   * The model that will power your agent.
+   *
+   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
    * details and options.
    */
   id: BetaManagedAgentsModel;
@@ -831,18 +829,20 @@ export interface AgentCreateParams {
   model: BetaManagedAgentsModel | BetaManagedAgentsModelConfigParams;
 
   /**
-   * Body param: Human-readable name for the agent. 1-256 characters.
+   * Body param: Human-readable name for the agent.
    */
   name: string;
 
   /**
-   * Body param: Description of what the agent does. Up to 2048 characters.
+   * Body param: Description of what the agent does.
    */
   description?: string | null;
 
   /**
    * Body param: MCP servers this agent connects to. Maximum 20. Names must be unique
-   * within the array.
+   * within the array. Every server must be referenced by an `mcp_toolset` in
+   * `tools`; unreferenced servers are rejected. See the
+   * [MCP connector guide](https://platform.claude.com/docs/en/managed-agents/mcp-connector).
    */
   mcp_servers?: Array<BetaManagedAgentsURLMCPServerParams>;
 
@@ -860,12 +860,12 @@ export interface AgentCreateParams {
   multiagent?: SessionsAPI.BetaManagedAgentsMultiagentParams | null;
 
   /**
-   * Body param: Skills available to the agent. Maximum 20.
+   * Body param: Skills available to the agent.
    */
   skills?: Array<BetaManagedAgentsSkillParams>;
 
   /**
-   * Body param: System prompt for the agent. Up to 100,000 characters.
+   * Body param: System prompt for the agent.
    */
   system?: string | null;
 
@@ -907,14 +907,16 @@ export interface AgentUpdateParams {
   version: number;
 
   /**
-   * Body param: Description. Up to 2048 characters. Omit to preserve; send empty
-   * string or null to clear.
+   * Body param: Description. Omit to preserve; send empty string or null to clear.
    */
   description?: string | null;
 
   /**
    * Body param: MCP servers. Full replacement. Omit to preserve; send empty array or
-   * null to clear. Names must be unique. Maximum 20.
+   * `null` to clear. Names must be unique. Maximum 20. Every server must be
+   * referenced by an `mcp_toolset` in the agent's resulting `tools`; unreferenced
+   * servers are rejected. See the
+   * [MCP connector guide](https://platform.claude.com/docs/en/managed-agents/mcp-connector).
    */
   mcp_servers?: Array<BetaManagedAgentsURLMCPServerParams> | null;
 
@@ -941,20 +943,19 @@ export interface AgentUpdateParams {
   multiagent?: SessionsAPI.BetaManagedAgentsMultiagentParams | null;
 
   /**
-   * Body param: Human-readable name. 1-256 characters. Omit to preserve. Cannot be
+   * Body param: Human-readable name. Must be non-empty. Omit to preserve. Cannot be
    * cleared.
    */
   name?: string;
 
   /**
    * Body param: Skills. Full replacement. Omit to preserve; send empty array or null
-   * to clear. Maximum 20.
+   * to clear.
    */
   skills?: Array<BetaManagedAgentsSkillParams> | null;
 
   /**
-   * Body param: System prompt. Up to 100,000 characters. Omit to preserve; send
-   * empty string or null to clear.
+   * Body param: System prompt. Omit to preserve; send empty string or null to clear.
    */
   system?: string | null;
 

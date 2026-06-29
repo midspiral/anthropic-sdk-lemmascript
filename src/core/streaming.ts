@@ -33,6 +33,21 @@ export class Stream<Item> implements AsyncIterable<Item> {
     this.#client = client;
   }
 
+  /**
+   * Iterate the raw Server-Sent Events from `response` — `{event, data, raw}`
+   * objects, before any JSON parsing or event-name filtering.
+   *
+   * This reads `response.body` directly (not a clone), so the response is
+   * consumed. Use this in middleware that fully replaces the stream body; for
+   * read-only observation of parsed events, use `ctx.parse()` instead.
+   */
+  static rawEvents(
+    response: Response,
+    controller: AbortController = new AbortController(),
+  ): AsyncGenerator<ServerSentEvent, void, unknown> {
+    return _iterSSEMessages(response, controller);
+  }
+
   static fromSSEResponse<Item>(
     response: Response,
     controller: AbortController,
@@ -102,7 +117,8 @@ export class Stream<Item> implements AsyncIterable<Item> {
             sse.event === 'session.thread_status_running' ||
             sse.event === 'session.thread_status_idle' ||
             sse.event === 'session.thread_status_rescheduled' ||
-            sse.event === 'session.thread_status_terminated'
+            sse.event === 'session.thread_status_terminated' ||
+            sse.event === 'system.message'
           ) {
             try {
               yield JSON.parse(sse.data) as Item;

@@ -64,6 +64,31 @@ describe('resource batches', () => {
               ],
             },
             diagnostics: { previous_message_id: 'previous_message_id' },
+            fallback_credit_token: 'x',
+            fallbacks: [
+              {
+                model: 'claude-fable-5',
+                max_tokens: 0,
+                output_config: {
+                  effort: 'low',
+                  format: {
+                    schema: { foo: 'bar' },
+                    type: 'json_schema',
+                  },
+                  task_budget: {
+                    total: 1024,
+                    type: 'tokens',
+                    remaining: 0,
+                  },
+                },
+                speed: 'standard',
+                thinking: {
+                  budget_tokens: 1024,
+                  type: 'enabled',
+                  display: 'summarized',
+                },
+              },
+            ],
             inference_geo: 'inference_geo',
             mcp_servers: [
               {
@@ -135,11 +160,11 @@ describe('resource batches', () => {
             ],
             top_k: 5,
             top_p: 0.7,
-            user_profile_id: 'user_profile_id',
           },
         },
       ],
       betas: ['message-batches-2024-09-24'],
+      user_profile_id: 'anthropic-user-profile-id',
     });
   });
 

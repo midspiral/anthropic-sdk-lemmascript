@@ -1,6 +1,80 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 import { APIResource } from '../../core/resource';
+import * as DeploymentRunsAPI from './deployment-runs';
+import {
+  BetaManagedAgentsAgentArchivedRunError,
+  BetaManagedAgentsDeploymentRun,
+  BetaManagedAgentsDeploymentRunsPageCursor,
+  BetaManagedAgentsEnvironmentArchivedRunError,
+  BetaManagedAgentsEnvironmentNotFoundRunError,
+  BetaManagedAgentsFileNotFoundRunError,
+  BetaManagedAgentsMCPEgressBlockedRunError,
+  BetaManagedAgentsManualTriggerContext,
+  BetaManagedAgentsMemoryStoreArchivedRunError,
+  BetaManagedAgentsOrganizationDisabledRunError,
+  BetaManagedAgentsScheduleTriggerContext,
+  BetaManagedAgentsSelfHostedResourcesUnsupportedRunError,
+  BetaManagedAgentsSessionCreationRejectedRunError,
+  BetaManagedAgentsSessionRateLimitedRunError,
+  BetaManagedAgentsSessionResourceNotFoundRunError,
+  BetaManagedAgentsSkillNotFoundRunError,
+  BetaManagedAgentsTriggerContext,
+  BetaManagedAgentsTriggerType,
+  BetaManagedAgentsUnknownRunError,
+  BetaManagedAgentsVaultArchivedRunError,
+  BetaManagedAgentsVaultNotFoundRunError,
+  BetaManagedAgentsWorkspaceArchivedRunError,
+  DeploymentRunListParams,
+  DeploymentRunRetrieveParams,
+  DeploymentRuns,
+} from './deployment-runs';
+import * as DeploymentsAPI from './deployments';
+import {
+  BetaManagedAgentsAgentArchivedDeploymentPausedReasonError,
+  BetaManagedAgentsCronSchedule,
+  BetaManagedAgentsCronScheduleParams,
+  BetaManagedAgentsDeployment,
+  BetaManagedAgentsDeploymentInitialEvent,
+  BetaManagedAgentsDeploymentInitialEventParams,
+  BetaManagedAgentsDeploymentPausedReason,
+  BetaManagedAgentsDeploymentPausedReasonError,
+  BetaManagedAgentsDeploymentStatus,
+  BetaManagedAgentsDeploymentSystemMessageEvent,
+  BetaManagedAgentsDeploymentUserDefineOutcomeEvent,
+  BetaManagedAgentsDeploymentUserMessageEvent,
+  BetaManagedAgentsDeploymentsPageCursor,
+  BetaManagedAgentsEnvironmentArchivedDeploymentPausedReasonError,
+  BetaManagedAgentsEnvironmentNotFoundDeploymentPausedReasonError,
+  BetaManagedAgentsErrorDeploymentPausedReason,
+  BetaManagedAgentsFileNotFoundDeploymentPausedReasonError,
+  BetaManagedAgentsFileResourceConfig,
+  BetaManagedAgentsGitHubRepositoryResourceConfig,
+  BetaManagedAgentsMCPEgressBlockedDeploymentPausedReasonError,
+  BetaManagedAgentsManualDeploymentPausedReason,
+  BetaManagedAgentsMemoryStoreArchivedDeploymentPausedReasonError,
+  BetaManagedAgentsMemoryStoreResourceConfig,
+  BetaManagedAgentsOrganizationDisabledDeploymentPausedReasonError,
+  BetaManagedAgentsSchedule,
+  BetaManagedAgentsScheduleParams,
+  BetaManagedAgentsSelfHostedResourcesUnsupportedDeploymentPausedReasonError,
+  BetaManagedAgentsSessionResourceConfig,
+  BetaManagedAgentsSessionResourceNotFoundDeploymentPausedReasonError,
+  BetaManagedAgentsSkillNotFoundDeploymentPausedReasonError,
+  BetaManagedAgentsUnknownDeploymentPausedReasonError,
+  BetaManagedAgentsVaultArchivedDeploymentPausedReasonError,
+  BetaManagedAgentsVaultNotFoundDeploymentPausedReasonError,
+  BetaManagedAgentsWorkspaceArchivedDeploymentPausedReasonError,
+  DeploymentArchiveParams,
+  DeploymentCreateParams,
+  DeploymentListParams,
+  DeploymentPauseParams,
+  DeploymentRetrieveParams,
+  DeploymentRunParams,
+  DeploymentUnpauseParams,
+  DeploymentUpdateParams,
+  Deployments,
+} from './deployments';
 import * as FilesAPI from './files';
 import {
   BetaFileScope,
@@ -60,6 +134,7 @@ import {
   BetaWebhookSessionThreadCreatedEventData,
   BetaWebhookSessionThreadIdledEventData,
   BetaWebhookSessionThreadTerminatedEventData,
+  BetaWebhookSessionUpdatedEventData,
   BetaWebhookVaultArchivedEventData,
   BetaWebhookVaultCreatedEventData,
   BetaWebhookVaultCredentialArchivedEventData,
@@ -210,6 +285,7 @@ import {
   BetaCodeExecutionTool20250522,
   BetaCodeExecutionTool20250825,
   BetaCodeExecutionTool20260120,
+  BetaCodeExecutionTool20260521,
   BetaCodeExecutionToolResultBlock,
   BetaCodeExecutionToolResultBlockContent,
   BetaCodeExecutionToolResultBlockParam,
@@ -239,6 +315,13 @@ import {
   BetaDocumentBlock,
   BetaEncryptedCodeExecutionResultBlock,
   BetaEncryptedCodeExecutionResultBlockParam,
+  BetaFallbackBlock,
+  BetaFallbackBlockParam,
+  BetaFallbackInfo,
+  BetaFallbackInfoParam,
+  BetaFallbackMessageIterationUsage,
+  BetaFallbackParam,
+  BetaFallbackRefusalTrigger,
   BetaFileDocumentSource,
   BetaFileImageSource,
   BetaImageBlockParam,
@@ -264,7 +347,9 @@ import {
   BetaMessageParam,
   BetaMessageTokensCount,
   BetaMetadata,
+  BetaMidConversationSystemBlockParam,
   BetaOutputConfig,
+  BetaOutputTokensDetails,
   BetaPlainTextSource,
   BetaRawContentBlockDelta,
   BetaRawContentBlockDeltaEvent,
@@ -393,6 +478,8 @@ import {
   BetaManagedAgentsSessionUpdatedEvent,
   BetaManagedAgentsSessionUsage,
   BetaManagedAgentsSessionsPageCursor,
+  BetaManagedAgentsSystemContentBlock,
+  BetaManagedAgentsSystemMessageEvent,
   BetaManagedAgentsUserToolResultEvent,
   SessionArchiveParams,
   SessionCreateParams,
@@ -435,6 +522,8 @@ export class Beta extends APIResource {
   agents: AgentsAPI.Agents = new AgentsAPI.Agents(this._client);
   environments: EnvironmentsAPI.Environments = new EnvironmentsAPI.Environments(this._client);
   sessions: SessionsAPI.Sessions = new SessionsAPI.Sessions(this._client);
+  deployments: DeploymentsAPI.Deployments = new DeploymentsAPI.Deployments(this._client);
+  deploymentRuns: DeploymentRunsAPI.DeploymentRuns = new DeploymentRunsAPI.DeploymentRuns(this._client);
   vaults: VaultsAPI.Vaults = new VaultsAPI.Vaults(this._client);
   memoryStores: MemoryStoresAPI.MemoryStores = new MemoryStoresAPI.MemoryStores(this._client);
   files: FilesAPI.Files = new FilesAPI.Files(this._client);
@@ -469,7 +558,10 @@ export type AnthropicBeta =
   | 'user-profiles-2026-03-24'
   | 'advisor-tool-2026-03-01'
   | 'managed-agents-2026-04-01'
-  | 'cache-diagnosis-2026-04-07';
+  | 'cache-diagnosis-2026-04-07'
+  | 'thinking-token-count-2026-05-13'
+  | 'server-side-fallback-2026-06-01'
+  | 'fallback-credit-2026-06-01';
 
 export interface BetaAPIError {
   message: string;
@@ -549,6 +641,8 @@ Beta.Messages = Messages;
 Beta.Agents = Agents;
 Beta.Environments = Environments;
 Beta.Sessions = Sessions;
+Beta.Deployments = Deployments;
+Beta.DeploymentRuns = DeploymentRuns;
 Beta.Vaults = Vaults;
 Beta.MemoryStores = MemoryStores;
 Beta.Files = Files;
@@ -641,6 +735,7 @@ export declare namespace Beta {
     type BetaCodeExecutionTool20250522 as BetaCodeExecutionTool20250522,
     type BetaCodeExecutionTool20250825 as BetaCodeExecutionTool20250825,
     type BetaCodeExecutionTool20260120 as BetaCodeExecutionTool20260120,
+    type BetaCodeExecutionTool20260521 as BetaCodeExecutionTool20260521,
     type BetaCodeExecutionToolResultBlock as BetaCodeExecutionToolResultBlock,
     type BetaCodeExecutionToolResultBlockContent as BetaCodeExecutionToolResultBlockContent,
     type BetaCodeExecutionToolResultBlockParam as BetaCodeExecutionToolResultBlockParam,
@@ -670,6 +765,13 @@ export declare namespace Beta {
     type BetaDocumentBlock as BetaDocumentBlock,
     type BetaEncryptedCodeExecutionResultBlock as BetaEncryptedCodeExecutionResultBlock,
     type BetaEncryptedCodeExecutionResultBlockParam as BetaEncryptedCodeExecutionResultBlockParam,
+    type BetaFallbackBlock as BetaFallbackBlock,
+    type BetaFallbackBlockParam as BetaFallbackBlockParam,
+    type BetaFallbackInfo as BetaFallbackInfo,
+    type BetaFallbackInfoParam as BetaFallbackInfoParam,
+    type BetaFallbackMessageIterationUsage as BetaFallbackMessageIterationUsage,
+    type BetaFallbackParam as BetaFallbackParam,
+    type BetaFallbackRefusalTrigger as BetaFallbackRefusalTrigger,
     type BetaFileDocumentSource as BetaFileDocumentSource,
     type BetaFileImageSource as BetaFileImageSource,
     type BetaImageBlockParam as BetaImageBlockParam,
@@ -697,7 +799,9 @@ export declare namespace Beta {
     type BetaMessageParam as BetaMessageParam,
     type BetaMessageTokensCount as BetaMessageTokensCount,
     type BetaMetadata as BetaMetadata,
+    type BetaMidConversationSystemBlockParam as BetaMidConversationSystemBlockParam,
     type BetaOutputConfig as BetaOutputConfig,
+    type BetaOutputTokensDetails as BetaOutputTokensDetails,
     type BetaPlainTextSource as BetaPlainTextSource,
     type BetaRawContentBlockDelta as BetaRawContentBlockDelta,
     type BetaRawContentBlockDeltaEvent as BetaRawContentBlockDeltaEvent,
@@ -895,6 +999,8 @@ export declare namespace Beta {
     type BetaManagedAgentsSessionStats as BetaManagedAgentsSessionStats,
     type BetaManagedAgentsSessionUpdatedEvent as BetaManagedAgentsSessionUpdatedEvent,
     type BetaManagedAgentsSessionUsage as BetaManagedAgentsSessionUsage,
+    type BetaManagedAgentsSystemContentBlock as BetaManagedAgentsSystemContentBlock,
+    type BetaManagedAgentsSystemMessageEvent as BetaManagedAgentsSystemMessageEvent,
     type BetaManagedAgentsUserToolResultEvent as BetaManagedAgentsUserToolResultEvent,
     type BetaManagedAgentsSessionsPageCursor as BetaManagedAgentsSessionsPageCursor,
     type SessionCreateParams as SessionCreateParams,
@@ -903,6 +1009,80 @@ export declare namespace Beta {
     type SessionListParams as SessionListParams,
     type SessionDeleteParams as SessionDeleteParams,
     type SessionArchiveParams as SessionArchiveParams,
+  };
+
+  export {
+    Deployments as Deployments,
+    type BetaManagedAgentsAgentArchivedDeploymentPausedReasonError as BetaManagedAgentsAgentArchivedDeploymentPausedReasonError,
+    type BetaManagedAgentsCronSchedule as BetaManagedAgentsCronSchedule,
+    type BetaManagedAgentsCronScheduleParams as BetaManagedAgentsCronScheduleParams,
+    type BetaManagedAgentsDeployment as BetaManagedAgentsDeployment,
+    type BetaManagedAgentsDeploymentInitialEvent as BetaManagedAgentsDeploymentInitialEvent,
+    type BetaManagedAgentsDeploymentInitialEventParams as BetaManagedAgentsDeploymentInitialEventParams,
+    type BetaManagedAgentsDeploymentPausedReason as BetaManagedAgentsDeploymentPausedReason,
+    type BetaManagedAgentsDeploymentPausedReasonError as BetaManagedAgentsDeploymentPausedReasonError,
+    type BetaManagedAgentsDeploymentStatus as BetaManagedAgentsDeploymentStatus,
+    type BetaManagedAgentsDeploymentSystemMessageEvent as BetaManagedAgentsDeploymentSystemMessageEvent,
+    type BetaManagedAgentsDeploymentUserDefineOutcomeEvent as BetaManagedAgentsDeploymentUserDefineOutcomeEvent,
+    type BetaManagedAgentsDeploymentUserMessageEvent as BetaManagedAgentsDeploymentUserMessageEvent,
+    type BetaManagedAgentsEnvironmentArchivedDeploymentPausedReasonError as BetaManagedAgentsEnvironmentArchivedDeploymentPausedReasonError,
+    type BetaManagedAgentsEnvironmentNotFoundDeploymentPausedReasonError as BetaManagedAgentsEnvironmentNotFoundDeploymentPausedReasonError,
+    type BetaManagedAgentsErrorDeploymentPausedReason as BetaManagedAgentsErrorDeploymentPausedReason,
+    type BetaManagedAgentsFileNotFoundDeploymentPausedReasonError as BetaManagedAgentsFileNotFoundDeploymentPausedReasonError,
+    type BetaManagedAgentsFileResourceConfig as BetaManagedAgentsFileResourceConfig,
+    type BetaManagedAgentsGitHubRepositoryResourceConfig as BetaManagedAgentsGitHubRepositoryResourceConfig,
+    type BetaManagedAgentsManualDeploymentPausedReason as BetaManagedAgentsManualDeploymentPausedReason,
+    type BetaManagedAgentsMCPEgressBlockedDeploymentPausedReasonError as BetaManagedAgentsMCPEgressBlockedDeploymentPausedReasonError,
+    type BetaManagedAgentsMemoryStoreArchivedDeploymentPausedReasonError as BetaManagedAgentsMemoryStoreArchivedDeploymentPausedReasonError,
+    type BetaManagedAgentsMemoryStoreResourceConfig as BetaManagedAgentsMemoryStoreResourceConfig,
+    type BetaManagedAgentsOrganizationDisabledDeploymentPausedReasonError as BetaManagedAgentsOrganizationDisabledDeploymentPausedReasonError,
+    type BetaManagedAgentsSchedule as BetaManagedAgentsSchedule,
+    type BetaManagedAgentsScheduleParams as BetaManagedAgentsScheduleParams,
+    type BetaManagedAgentsSelfHostedResourcesUnsupportedDeploymentPausedReasonError as BetaManagedAgentsSelfHostedResourcesUnsupportedDeploymentPausedReasonError,
+    type BetaManagedAgentsSessionResourceConfig as BetaManagedAgentsSessionResourceConfig,
+    type BetaManagedAgentsSessionResourceNotFoundDeploymentPausedReasonError as BetaManagedAgentsSessionResourceNotFoundDeploymentPausedReasonError,
+    type BetaManagedAgentsSkillNotFoundDeploymentPausedReasonError as BetaManagedAgentsSkillNotFoundDeploymentPausedReasonError,
+    type BetaManagedAgentsUnknownDeploymentPausedReasonError as BetaManagedAgentsUnknownDeploymentPausedReasonError,
+    type BetaManagedAgentsVaultArchivedDeploymentPausedReasonError as BetaManagedAgentsVaultArchivedDeploymentPausedReasonError,
+    type BetaManagedAgentsVaultNotFoundDeploymentPausedReasonError as BetaManagedAgentsVaultNotFoundDeploymentPausedReasonError,
+    type BetaManagedAgentsWorkspaceArchivedDeploymentPausedReasonError as BetaManagedAgentsWorkspaceArchivedDeploymentPausedReasonError,
+    type BetaManagedAgentsDeploymentsPageCursor as BetaManagedAgentsDeploymentsPageCursor,
+    type DeploymentCreateParams as DeploymentCreateParams,
+    type DeploymentRetrieveParams as DeploymentRetrieveParams,
+    type DeploymentUpdateParams as DeploymentUpdateParams,
+    type DeploymentListParams as DeploymentListParams,
+    type DeploymentArchiveParams as DeploymentArchiveParams,
+    type DeploymentPauseParams as DeploymentPauseParams,
+    type DeploymentRunParams as DeploymentRunParams,
+    type DeploymentUnpauseParams as DeploymentUnpauseParams,
+  };
+
+  export {
+    DeploymentRuns as DeploymentRuns,
+    type BetaManagedAgentsAgentArchivedRunError as BetaManagedAgentsAgentArchivedRunError,
+    type BetaManagedAgentsDeploymentRun as BetaManagedAgentsDeploymentRun,
+    type BetaManagedAgentsEnvironmentArchivedRunError as BetaManagedAgentsEnvironmentArchivedRunError,
+    type BetaManagedAgentsEnvironmentNotFoundRunError as BetaManagedAgentsEnvironmentNotFoundRunError,
+    type BetaManagedAgentsFileNotFoundRunError as BetaManagedAgentsFileNotFoundRunError,
+    type BetaManagedAgentsManualTriggerContext as BetaManagedAgentsManualTriggerContext,
+    type BetaManagedAgentsMCPEgressBlockedRunError as BetaManagedAgentsMCPEgressBlockedRunError,
+    type BetaManagedAgentsMemoryStoreArchivedRunError as BetaManagedAgentsMemoryStoreArchivedRunError,
+    type BetaManagedAgentsOrganizationDisabledRunError as BetaManagedAgentsOrganizationDisabledRunError,
+    type BetaManagedAgentsScheduleTriggerContext as BetaManagedAgentsScheduleTriggerContext,
+    type BetaManagedAgentsSelfHostedResourcesUnsupportedRunError as BetaManagedAgentsSelfHostedResourcesUnsupportedRunError,
+    type BetaManagedAgentsSessionCreationRejectedRunError as BetaManagedAgentsSessionCreationRejectedRunError,
+    type BetaManagedAgentsSessionRateLimitedRunError as BetaManagedAgentsSessionRateLimitedRunError,
+    type BetaManagedAgentsSessionResourceNotFoundRunError as BetaManagedAgentsSessionResourceNotFoundRunError,
+    type BetaManagedAgentsSkillNotFoundRunError as BetaManagedAgentsSkillNotFoundRunError,
+    type BetaManagedAgentsTriggerContext as BetaManagedAgentsTriggerContext,
+    type BetaManagedAgentsTriggerType as BetaManagedAgentsTriggerType,
+    type BetaManagedAgentsUnknownRunError as BetaManagedAgentsUnknownRunError,
+    type BetaManagedAgentsVaultArchivedRunError as BetaManagedAgentsVaultArchivedRunError,
+    type BetaManagedAgentsVaultNotFoundRunError as BetaManagedAgentsVaultNotFoundRunError,
+    type BetaManagedAgentsWorkspaceArchivedRunError as BetaManagedAgentsWorkspaceArchivedRunError,
+    type BetaManagedAgentsDeploymentRunsPageCursor as BetaManagedAgentsDeploymentRunsPageCursor,
+    type DeploymentRunRetrieveParams as DeploymentRunRetrieveParams,
+    type DeploymentRunListParams as DeploymentRunListParams,
   };
 
   export {
@@ -976,6 +1156,7 @@ export declare namespace Beta {
     type BetaWebhookSessionThreadCreatedEventData as BetaWebhookSessionThreadCreatedEventData,
     type BetaWebhookSessionThreadIdledEventData as BetaWebhookSessionThreadIdledEventData,
     type BetaWebhookSessionThreadTerminatedEventData as BetaWebhookSessionThreadTerminatedEventData,
+    type BetaWebhookSessionUpdatedEventData as BetaWebhookSessionUpdatedEventData,
     type BetaWebhookVaultArchivedEventData as BetaWebhookVaultArchivedEventData,
     type BetaWebhookVaultCreatedEventData as BetaWebhookVaultCreatedEventData,
     type BetaWebhookVaultCredentialArchivedEventData as BetaWebhookVaultCredentialArchivedEventData,

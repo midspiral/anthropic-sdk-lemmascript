@@ -8,7 +8,11 @@ import { RequestOptions } from '../../internal/request-options';
 import { buildHeaders } from '../../internal/headers';
 import { promiseWithResolvers } from '../../internal/utils/promise';
 import { CompactionControl, DEFAULT_SUMMARY_PROMPT, DEFAULT_TOKEN_THRESHOLD } from './CompactionControl';
-import { collectStainlessHelpers } from '../stainless-helper-header';
+import {
+  collectStainlessHelpers,
+  helperHeader,
+  STAINLESS_HELPER_HEADER,
+} from '../../internal/stainless-helper-header';
 
 /**
  * A ToolRunner handles the automatic conversation loop between the assistant and tools.
@@ -52,12 +56,17 @@ export class BetaToolRunner<Stream extends boolean> {
       },
     };
 
-    const helpers = collectStainlessHelpers(params.tools, params.messages);
-    const helperValue = ['BetaToolRunner', ...helpers].join(', ');
-
+    // structuredClone drops symbol-keyed properties, so collect helper marks
+    // from the original params here — the create()-side collector won't see
+    // them on the cloned messages.
+    const collected = collectStainlessHelpers(params.tools, params.messages);
     this.#options = {
       ...options,
-      headers: buildHeaders([{ 'x-stainless-helper': helperValue }, options?.headers]),
+      headers: buildHeaders([
+        helperHeader('BetaToolRunner'),
+        collected.length ? { [STAINLESS_HELPER_HEADER]: collected.join(', ') } : undefined,
+        options?.headers,
+      ]),
     };
     this.#completion = promiseWithResolvers();
 
@@ -137,7 +146,7 @@ export class BetaToolRunner<Stream extends boolean> {
       },
       {
         signal: this.#options.signal,
-        headers: buildHeaders([this.#options.headers, { 'x-stainless-helper': 'compaction' }]),
+        headers: buildHeaders([this.#options.headers, helperHeader('compaction')]),
       },
     );
 
@@ -199,8 +208,17 @@ export class BetaToolRunner<Stream extends boolean> {
           const isCompacted = await this.#checkAndCompact();
           if (!isCompacted) {
             if (!this.#mutated) {
-              const { role, content } = await this.#message;
-              this.#state.params.messages.push({ role, content });
+              const message = await this.#message;
+              this.#state.params.messages.push({ role: message.role, content: message.content });
+
+              // Refusal-terminated turns are terminal: the refusal may have cut a tool_use off
+              // with partial input, so executing this turn's tools would fire side effects the
+              // model never confirmed — and once middleware strips the refusal turn, their
+              // tool_results could never be replayed coherently. Surface the refusal as the
+              // final message instead.
+              if (message.stop_reason === 'refusal') {
+                break;
+              }
             }
 
             const toolMessage = await this.#generateToolResponse(this.#state.params.messages.at(-1)!);
@@ -521,4 +539,4 @@ export type BetaToolRunnerParams = Simplify<
   }
 >;
 
-export type BetaToolRunnerRequestOptions = Pick<RequestOptions, 'headers' | 'signal'>;
+export type BetaToolRunnerRequestOptions = Pick<RequestOptions, 'headers' | 'signal' | 'fallbackState'>;
